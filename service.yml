@@ -1,0 +1,137 @@
+service:
+  name: aac-grafana
+  image_repo: grafana/grafana-enterprise
+  image_tag: 13.3.0-boringcrypto
+  description: The open-source platform for monitoring and observability.
+  icon: grafana.png
+  category: Monitoring
+  stage: prod
+  hostname: grafana
+ports:
+- name: web
+  port: 3000
+  protocol: TCP
+  external_port: 23812
+config:
+  domain_name: example.com
+  generate_hostname: false
+  integrations:
+    homepage:
+      enabled: true
+    autodns:
+      enabled: true
+      create_wildcard: true
+    traefik:
+      enabled: true
+      cert_resolver: ionos
+      entrypoint: websecure
+  schema_version: 2
+stage_overrides:
+  prod:
+    service:
+      hostname: grafana
+    config:
+      generate_hostname: false
+secrets:
+  GF_DS_INFLUX_ONPREM_TOKEN: CHANGE_ME
+  GF_DS_INFLUX_HETZNER_TOKEN: CHANGE_ME
+  GF_AUTH_GENERIC_OAUTH_TOKEN_URL: CHANGE_ME
+  GF_SECURITY_ADMIN_PASSWORD: CHANGE_ME
+  GF_AUTH_GENERIC_OAUTH_CLIENT_ID: CHANGE_ME
+  GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: CHANGE_ME
+volumes:
+  data:
+    description: Grafana data, dashboards, and plugins
+    uid: '472'
+    gid: '472'
+  provisioning:
+    description: Grafana file provisioning (datasources, dashboards, alerting) — rendered
+      from custom_templates/files/provisioning
+    uid: '472'
+    gid: '472'
+deployment_strategy:
+  main:
+    enabled: true
+    target_stage: prod
+  dev:
+    enabled: true
+    target_stage: dev
+  test:
+    enabled: false
+    target_stage: test
+  ansible-dev:
+    enabled: true
+    target_stage: dev
+  iac-dev:
+    enabled: true
+    target_stage: dev
+  template-dev:
+    enabled: true
+    target_stage: dev
+deployments:
+  docker_compose:
+    restart_policy: unless-stopped
+    host_base_path: /export/docker
+    volumes:
+    - data:/var/lib/grafana
+    - provisioning:/etc/grafana/provisioning
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_AUTH_ANONYMOUS_ORG_NAME: Main Org.
+      SERVICE_IMAGE_TAG: '{{ vars.SERVICE_IMAGE_TAG }}'
+      GF_DS_INFLUX_ONPREM_TOKEN: '{{ secrets.GF_DS_INFLUX_ONPREM_TOKEN }}'
+      GF_DS_INFLUX_HETZNER_TOKEN: '{{ secrets.GF_DS_INFLUX_HETZNER_TOKEN }}'
+      SERVICE_DOMAIN_NAME: '{{ vars.SERVICE_DOMAIN_NAME }}'
+      PGID: '{{ vars.PGID }}'
+      GF_AUTH_OAUTH_AUTO_LOGIN: '{{ vars.GF_AUTH_OAUTH_AUTO_LOGIN }}'
+      GF_AUTH_GENERIC_OAUTH_ENABLED: '{{ vars.GF_AUTH_GENERIC_OAUTH_ENABLED }}'
+      GF_USERS_ALLOW_SIGN_UP: '{{ vars.GF_USERS_ALLOW_SIGN_UP }}'
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: '{{ secrets.GF_AUTH_GENERIC_OAUTH_TOKEN_URL
+        }}'
+      PUID: '{{ vars.PUID }}'
+      SERVICE_NAME: '{{ vars.SERVICE_NAME }}'
+      GF_AUTH_SIGNOUT_REDIRECT_URL: '{{ vars.GF_AUTH_SIGNOUT_REDIRECT_URL }}'
+      GF_SECURITY_ADMIN_USER: '{{ vars.GF_SECURITY_ADMIN_USER }}'
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: '{{ vars.GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH
+        }}'
+      GF_AUTH_GENERIC_OAUTH_SCOPES: '{{ vars.GF_AUTH_GENERIC_OAUTH_SCOPES }}'
+      SERVICE_HOSTNAME: '{{ vars.SERVICE_HOSTNAME }}'
+      GF_AUTH_GENERIC_OAUTH_API_URL: '{{ vars.GF_AUTH_GENERIC_OAUTH_API_URL }}'
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL: '{{ vars.GF_AUTH_GENERIC_OAUTH_AUTH_URL }}'
+      GF_AUTH_GENERIC_OAUTH_NAME: '{{ vars.GF_AUTH_GENERIC_OAUTH_NAME }}'
+      SERVICE_IMAGE_NAME: '{{ vars.SERVICE_IMAGE_NAME }}'
+      GF_AUTH_GENERIC_OAUTH_ALLOW_ASSIGN_GRAFANA_ADMIN: '{{ vars.GF_AUTH_GENERIC_OAUTH_ALLOW_ASSIGN_GRAFANA_ADMIN
+        }}'
+      TZ: '{{ vars.TZ }}'
+      GF_SERVER_ROOT_URL: '{{ vars.GF_SERVER_ROOT_URL }}'
+      GF_SECURITY_ADMIN_PASSWORD: '{{ secrets.GF_SECURITY_ADMIN_PASSWORD }}'
+      GF_AUTH_GENERIC_OAUTH_CLIENT_ID: '{{ secrets.GF_AUTH_GENERIC_OAUTH_CLIENT_ID
+        }}'
+      GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: '{{ secrets.GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET
+        }}'
+vars:
+  AD_DOMAIN: ad.example.com
+  INFLUX_ORG: example.com
+  SERVICE_IMAGE_TAG: 13.3.0-boringcrypto
+  SERVICE_DOMAIN_NAME: example.com
+  PGID: '1000'
+  GF_AUTH_OAUTH_AUTO_LOGIN: 'false'
+  GF_AUTH_GENERIC_OAUTH_ENABLED: 'true'
+  GF_USERS_ALLOW_SIGN_UP: 'true'
+  PUID: '1000'
+  SERVICE_NAME: aac-grafana
+  GF_AUTH_SIGNOUT_REDIRECT_URL: https://grafana.example.com
+  GF_SECURITY_ADMIN_USER: admin
+  GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: contains(groups, 'Grafana Admins super
+    admins') && 'GrafanaAdmin' || contains(groups, 'Grafana Admins old') && 'Admin'
+    || contains(groups, 'G_APPL_GRAFANA_USER') && 'Viewer' || 'Viewer'
+  GF_AUTH_GENERIC_OAUTH_SCOPES: openid profile email
+  SERVICE_HOSTNAME: grafana
+  GF_AUTH_GENERIC_OAUTH_API_URL: https://grafana.example.com
+  GF_AUTH_GENERIC_OAUTH_AUTH_URL: https://grafana.example.com
+  GF_AUTH_GENERIC_OAUTH_NAME: authentik
+  SERVICE_IMAGE_NAME: grafana/grafana-enterprise
+  GF_AUTH_GENERIC_OAUTH_ALLOW_ASSIGN_GRAFANA_ADMIN: 'true'
+  TZ: Europe/Berlin
+  GF_SERVER_ROOT_URL: https://grafana.example.com

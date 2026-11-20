@@ -1,0 +1,88 @@
+services:
+  # --- Main Application Service ---
+  aac-grafana:
+    image: "grafana/grafana-enterprise:13.3.0-boringcrypto"
+    container_name: "aac-grafana"
+    hostname: "grafana"
+    restart: "unless-stopped"
+
+
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
+      GF_AUTH_ANONYMOUS_ORG_NAME: "Main Org."
+      SERVICE_IMAGE_TAG: "13.3.0-boringcrypto"
+      GF_DS_INFLUX_ONPREM_TOKEN: "${GF_DS_INFLUX_ONPREM_TOKEN:?set GF_DS_INFLUX_ONPREM_TOKEN in .env (see .env.example)}"
+      GF_DS_INFLUX_HETZNER_TOKEN: "${GF_DS_INFLUX_HETZNER_TOKEN:?set GF_DS_INFLUX_HETZNER_TOKEN in .env (see .env.example)}"
+      SERVICE_DOMAIN_NAME: "example.com"
+      PGID: "1000"
+      GF_AUTH_OAUTH_AUTO_LOGIN: "false"
+      GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
+      GF_USERS_ALLOW_SIGN_UP: "true"
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: "${GF_AUTH_GENERIC_OAUTH_TOKEN_URL:?set GF_AUTH_GENERIC_OAUTH_TOKEN_URL in .env (see .env.example)}"
+      PUID: "1000"
+      SERVICE_NAME: "aac-grafana"
+      GF_AUTH_SIGNOUT_REDIRECT_URL: "https://grafana.example.com"
+      GF_SECURITY_ADMIN_USER: "admin"
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: "contains(groups, \u0027Grafana Admins super admins\u0027) \u0026\u0026 \u0027GrafanaAdmin\u0027 || contains(groups, \u0027Grafana Admins old\u0027) \u0026\u0026 \u0027Admin\u0027 || contains(groups, \u0027G_APPL_GRAFANA_USER\u0027) \u0026\u0026 \u0027Viewer\u0027 || \u0027Viewer\u0027"
+      GF_AUTH_GENERIC_OAUTH_SCOPES: "openid profile email"
+      SERVICE_HOSTNAME: "grafana"
+      GF_AUTH_GENERIC_OAUTH_API_URL: "https://grafana.example.com"
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL: "https://grafana.example.com"
+      GF_AUTH_GENERIC_OAUTH_NAME: "authentik"
+      SERVICE_IMAGE_NAME: "grafana/grafana-enterprise"
+      GF_AUTH_GENERIC_OAUTH_ALLOW_ASSIGN_GRAFANA_ADMIN: "true"
+      TZ: "Europe/Berlin"
+      GF_SERVER_ROOT_URL: "https://grafana.example.com"
+      GF_SECURITY_ADMIN_PASSWORD: "${GF_SECURITY_ADMIN_PASSWORD:?set GF_SECURITY_ADMIN_PASSWORD in .env (see .env.example)}"
+      GF_AUTH_GENERIC_OAUTH_CLIENT_ID: "${GF_AUTH_GENERIC_OAUTH_CLIENT_ID:?set GF_AUTH_GENERIC_OAUTH_CLIENT_ID in .env (see .env.example)}"
+      GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: "${GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET:?set GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET in .env (see .env.example)}"
+    ports:
+      - "23812:3000/tcp"
+
+    volumes:
+      - "/export/docker/aac-grafana/data:/var/lib/grafana"
+      - "/export/docker/aac-grafana/provisioning:/etc/grafana/provisioning"
+
+    networks:
+      - exposed
+      - interconnect
+      - secured
+      - stack_internal
+
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.aac-grafana.rule: "Host(`grafana.example.com`)"
+      traefik.http.routers.aac-grafana.entrypoints: "websecure"
+      traefik.http.routers.aac-grafana.tls: "true"
+      traefik.http.routers.aac-grafana.tls.certresolver: "ionos"
+      traefik.docker.network: "services-secured"
+      traefik.http.services.aac-grafana.loadbalancer.server.port: "3000"
+      traefik.http.services.aac-grafana.loadbalancer.server.scheme: "http"
+      auto-dns.createWildcard.aac-grafana: "true"
+      auto-dns.customDNS.aac-grafana: "true"
+      auto-dns.customDOMAIN.aac-grafana: "example.com"
+      auto-dns.customHost.aac-grafana: "grafana"
+      homepage.group: "Monitoring"
+      homepage.name: "Grafana"
+      homepage.href: "https://grafana.example.com"
+      homepage.icon: "grafana.png"
+      homepage.description: "The open-source platform for monitoring and observability."
+
+
+
+
+networks:
+  secured:
+    name: "services-secured"
+    external: true
+  exposed:
+    name: "services-exposed"
+    external: true
+  interconnect:
+    name: "docker-default"
+    external: true
+  stack_internal:
+    name: "aac-grafana_stack_internal"
+    driver: "bridge"
+

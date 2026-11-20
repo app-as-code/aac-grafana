@@ -1,0 +1,17 @@
+# Rendered by aac-template-engine from service.yml (aac-grafana) — dashboard
+# provisioning. Every JSON under dashboards/json/<Folder>/ is a dashboard; the
+# directory name becomes the Grafana folder (root = General).
+# allowUiUpdates: layout tweaks may be saved in the UI, but the repo stays the
+# source of truth — run scripts/export-dashboards.sh and commit, otherwise the
+# next rollout of that file wins.
+apiVersion: 1
+providers:
+  - name: aac-grafana-ssot
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json
+      foldersFromFilesStructure: true

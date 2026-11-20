@@ -1,0 +1,118 @@
+# Rendered by aac-template-engine from service.yml (aac-grafana) — Grafana
+# datasource provisioning. Mounted at /etc/grafana/provisioning/datasources/.
+#
+# UIDs are pinned to the values the dashboards already reference, so the
+# JSON exports under dashboards/json/ keep working unchanged. Tokens come from
+# the container environment (Grafana expands $VAR in provisioning files);
+# the values live in the iac-controller secrets of the docker host.
+# Datasources are `editable: false` — change them here, not in the UI.
+apiVersion: 1
+
+deleteDatasources:
+  # Empty leftovers from earlier experiments (no URL, no dashboards use them).
+  - name: influxdb
+    orgId: 1
+  - name: opentsdb
+    orgId: 1
+  - name: loki
+    orgId: 1
+
+datasources:
+  # --- Prometheus (cAdvisor / blackbox), one per site ---
+  - name: prometheus-onprem
+    uid: depqayxd6w934a
+    type: prometheus
+    access: proxy
+    url: http://docker-cerberus.{{ vars.AD_DOMAIN }}:9090
+    editable: false
+  - name: prometheus-hetzner
+    uid: depqayxu6pds0d
+    type: prometheus
+    access: proxy
+    url: http://docker-atlas.{{ vars.AD_DOMAIN }}:9090
+    editable: false
+
+  # --- InfluxDB v2 onprem (flux-olympus, org {{ vars.INFLUX_ORG }}), Flux ---
+  - name: influxdb-olympus-proxmox
+    uid: b4986db5-a0e1-454c-9244-79391c5e82b0
+    type: influxdb
+    access: proxy
+    url: http://flux-olympus.{{ vars.AD_DOMAIN }}:8086
+    isDefault: true
+    editable: false
+    jsonData:
+      version: Flux
+      organization: {{ vars.INFLUX_ORG }}
+      defaultBucket: proxmox
+      httpMode: POST
+    secureJsonData:
+      token: $GF_DS_INFLUX_ONPREM_TOKEN
+  - name: influxdb-olympus-homeassistant
+    uid: edtefswx63a4ga
+    type: influxdb
+    access: proxy
+    url: http://flux-olympus.{{ vars.AD_DOMAIN }}:8086
+    editable: false
+    jsonData:
+      version: Flux
+      organization: {{ vars.INFLUX_ORG }}
+      defaultBucket: homeassistant
+      httpMode: POST
+    secureJsonData:
+      token: $GF_DS_INFLUX_ONPREM_TOKEN
+  - name: influxdb-onprem-linux
+    uid: aeptlomn9qebka
+    type: influxdb
+    access: proxy
+    url: http://flux-olympus.{{ vars.AD_DOMAIN }}:8086
+    editable: false
+    jsonData:
+      version: Flux
+      organization: {{ vars.INFLUX_ORG }}
+      defaultBucket: linux
+      httpMode: POST
+    secureJsonData:
+      token: $GF_DS_INFLUX_ONPREM_TOKEN
+
+  # --- InfluxDB v2 hetzner (flux-titan, org hetzner), Flux ---
+  - name: influxdb-hetzner-proxmox
+    uid: dept8lf1bf6yoe
+    type: influxdb
+    access: proxy
+    url: http://flux-titan.{{ vars.AD_DOMAIN }}:8086
+    editable: false
+    jsonData:
+      version: Flux
+      organization: hetzner
+      defaultBucket: proxmox
+      httpMode: POST
+    secureJsonData:
+      token: $GF_DS_INFLUX_HETZNER_TOKEN
+  - name: influxdb-hetzner-linux
+    uid: ceptlkd1h0l4we
+    type: influxdb
+    access: proxy
+    url: http://flux-titan.{{ vars.AD_DOMAIN }}:8086
+    editable: false
+    jsonData:
+      version: Flux
+      organization: hetzner
+      defaultBucket: linux
+      httpMode: POST
+    secureJsonData:
+      token: $GF_DS_INFLUX_HETZNER_TOKEN
+  # pfSense dashboard queries InfluxQL: v2 answers via the DBRP mapping
+  # (bucket pfsense -> db pfsense) with token-header auth.
+  - name: influxdb-titan-pfsense
+    uid: cdtefogxmpo1sc
+    type: influxdb
+    access: proxy
+    url: http://flux-titan.{{ vars.AD_DOMAIN }}:8086
+    editable: false
+    jsonData:
+      version: InfluxQL
+      dbName: pfsense
+      httpMode: GET
+      httpHeaderName1: Authorization
+    secureJsonData:
+      httpHeaderValue1: Token $GF_DS_INFLUX_HETZNER_TOKEN
